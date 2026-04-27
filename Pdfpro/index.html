@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocLogic v2</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700;9..40,900&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0c0c0e;
+  --surf: #141416;
+  --card: #1a1a1e;
+  --bdr: #272730;
+  --bdr2: #38383f;
+  --txt: #e4e0d8;
+  --mut: #66636e;
+  --acc: #f5a623;
+  --acc2: #e0941a;
+  --red: #ef4444;
+  --grn: #22c55e;
+  --blue: #3b82f6;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'DM Sans', system-ui, sans-serif;
+}
+
+html, body { height: 100%; background: var(--bg); color: var(--txt); font-family: var(--sans); overflow: hidden; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: var(--bdr); border-radius: 4px; }
+
+/* ── Layout ── */
+.app { display: flex; height: 100vh; position: relative; overflow: hidden; }
+
+/* ── Sidebar ── */
+.sb { width: 210px; min-width: 210px; background: var(--surf); border-right: 1px solid var(--bdr); display: flex; flex-direction: column; overflow: hidden; }
+
+.logo { padding: 16px 14px; border-bottom: 1px solid var(--bdr); display: flex; align-items: center; gap: 9px; }
+.logo-ic { width: 30px; height: 30px; background: var(--acc); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+.logo-tx { font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: .04em; color: var(--txt); }
+.logo-v { font-size: 9px; color: var(--acc); margin-left: 2px; }
+
+.sb-nav { flex: 1; overflow-y: auto; padding: 10px 6px; }
+
+.nav-lbl { font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: .12em; color: var(--mut); text-transform: uppercase; padding: 0 8px; margin-bottom: 7px; display: flex; align-items: center; justify-content: space-between; }
+.nav-add { background: none; border: none; cursor: pointer; color: var(--mut); font-size: 18px; line-height: 1; padding: 0; transition: color .15s; }
+.nav-add:hover { color: var(--acc); }
+
+.fi { position: relative; margin-bottom: 2px; }
+/* BUG FIX #4: was "transition: *background* .12s, color .12s" — asterisks were markdown italic leak */
+.fb { width: 100%; background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 7px; padding: 7px 9px; border-radius: 6px; color: var(--mut); font-family: var(--sans); font-size: 12px; font-weight: 500; text-align: left; transition: background .12s, color .12s; }
+.fb:hover { background: var(--card); color: var(--txt); }
+.fb.on { background: var(--acc); color: #0c0c0e; font-weight: 700; }
+.fct { margin-left: auto; font-family: var(--mono); font-size: 9px; background: rgba(255,255,255,.07); padding: 1px 5px; border-radius: 3px; flex-shrink: 0; }
+.fb.on .fct { background: rgba(0,0,0,.2); }
+
+.fa { position: absolute; right: 32px; top: 50%; transform: translateY(-50%); display: none; align-items: center; gap: 2px; }
+.fi:hover .fa { display: flex; }
+.fa button { background: none; border: none; cursor: pointer; padding: 3px 4px; color: var(--mut); border-radius: 3px; font-size: 12px; transition: color .12s; }
+.fa button:hover { color: var(--acc); }
+
+.ainp { background: var(--card); border: 1px solid var(--bdr); border-radius: 6px; padding: 7px 9px; width: 100%; margin-bottom: 6px; font-family: var(--mono); font-size: 11px; color: var(--txt); outline: none; transition: border-color .15s; }
+.ainp:focus { border-color: var(--acc); }
+
+.sb-ft { padding: 11px 13px; border-top: 1px solid var(--bdr); background: var(--bg); }
+.sdot { width: 6px; height: 6px; border-radius: 50%; background: var(--grn); display: inline-block; margin-right: 5px; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.4 } }
+.logl { font-family: var(--mono); font-size: 9px; color: var(--mut); line-height: 1.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Main ── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
+
+.ibar { height: 2px; background: var(--bdr); position: relative; overflow: hidden; flex-shrink: 0; }
+.ibar::after { content: ''; position: absolute; top: 0; left: -40%; width: 40%; height: 100%; background: var(--acc); animation: isl 1s linear infinite; }
+@keyframes isl { to { left: 140%; } }
+
+.tb { height: 52px; display: flex; align-items: center; padding: 0 20px; gap: 10px; border-bottom: 1px solid var(--bdr); background: var(--surf); flex-shrink: 0; }
+.tb-title { font-size: 14px; font-weight: 700; flex: 1; color: var(--txt); letter-spacing: -.02em; }
+
+.sg { display: flex; gap: 2px; background: var(--card); border: 1px solid var(--bdr); border-radius: 6px; padding: 2px; }
+.sbt { font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 4px 10px; border-radius: 4px; border: none; cursor: pointer; background: none; color: var(--mut); transition: all .12s; }
+.sbt.on { background: var(--acc); color: #0c0c0e; }
+
+.tbtn { display: flex; align-items: center; gap: 5px; padding: 6px 13px; border-radius: 6px; border: 1px solid var(--bdr); font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; background: var(--card); color: var(--mut); transition: all .15s; white-space: nowrap; }
+.tbtn:hover:not(:disabled) { border-color: var(--acc); color: var(--acc); }
+.tbtn:disabled { opacity: .35; cursor: not-allowed; }
+.tbtn.pri { background: var(--acc); color: #0c0c0e; border-color: var(--acc); font-weight: 900; }
+.tbtn.pri:hover { background: var(--acc2); }
+
+/* ── File Grid ── */
+.fg { flex: 1; overflow-y: auto; padding: 20px; }
+.fgi { display: grid; grid-template-columns: repeat(auto-fill, minmax(185px, 1fr)); gap: 11px; }
+
+/* BUG FIX #4: was "transition: *background* .15s" in ::before */
+.fcard { background: var(--card); border: 1px solid var(--bdr); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; position: relative; overflow: hidden; transition: border-color .15s, transform .15s; }
+.fcard::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: transparent; transition: background .15s; }
+.fcard:hover { border-color: var(--bdr2); transform: translateY(-1px); }
+.fcard:hover::before { background: var(--acc); }
+.fcard:hover .fax { opacity: 1; }
+
+.fic { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.fic.pdf { background: rgba(239,68,68,.12); }
+.fic.img { background: rgba(59,130,246,.12); }
+
+.fn { font-size: 11px; font-weight: 600; line-height: 1.4; color: var(--txt); word-break: break-word; cursor: pointer; flex: 1; background: none; border: none; text-align: left; padding: 0; font-family: var(--sans); transition: color .12s; }
+.fn:hover { color: var(--acc); }
+
+.fm { font-family: var(--mono); font-size: 9px; color: var(--mut); display: flex; justify-content: space-between; }
+
+.fax { display: flex; gap: 3px; opacity: 0; transition: opacity .15s; }
+.fax button { background: none; border: none; cursor: pointer; padding: 4px; border-radius: 4px; color: var(--mut); font-size: 13px; transition: color .12s; }
+.fax button:hover { color: var(--acc); }
+.fax button.del:hover { color: var(--red); }
+
+.empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; color: var(--mut); border: 1px dashed var(--bdr); border-radius: 12px; margin: 20px; }
+.empty h3 { font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.empty p { font-size: 11px; }
+
+/* ── Overlays / Modals ── */
+.ov { position: absolute; inset: 0; background: rgba(0,0,0,.82); z-index: 200; display: flex; align-items: center; justify-content: center; }
+.mo { background: var(--surf); border: 1px solid var(--bdr); border-radius: 14px; padding: 24px; width: 390px; max-width: 94%; }
+.mo-icon { font-size: 24px; margin-bottom: 12px; }
+.mo-t { font-size: 14px; font-weight: 800; margin-bottom: 5px; letter-spacing: -.02em; color: var(--txt); }
+.mo-s { font-size: 12px; color: var(--mut); margin-bottom: 16px; line-height: 1.5; }
+.mo-i { width: 100%; background: var(--card); border: 1px solid var(--bdr); border-radius: 8px; padding: 9px 12px; color: var(--txt); font-family: var(--mono); font-size: 12px; outline: none; margin-bottom: 14px; transition: border-color .15s; }
+.mo-i:focus { border-color: var(--acc); }
+.mo-f { display: flex; gap: 7px; }
+
+.btn { padding: 8px 17px; border-radius: 7px; font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; border: 1px solid var(--bdr); background: var(--card); color: var(--mut); transition: all .15s; }
+.btn:hover { color: var(--txt); border-color: var(--bdr2); }
+.btn.pri { background: var(--acc); color: #0c0c0e; border-color: var(--acc); }
+.btn.pri:hover { background: var(--acc2); }
+.btn.dng { background: var(--red); color: #fff; border-color: var(--red); }
+.btn.dng:hover { background: #dc2626; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+.chip { padding: 6px 11px; background: var(--card); border: 1px solid var(--bdr); border-radius: 6px; font-family: var(--mono); font-size: 10px; font-weight: 600; cursor: pointer; color: var(--mut); transition: all .12s; }
+.chip:hover { border-color: var(--acc); color: var(--acc); }
+
+/* ── Viewer ── */
+.viewer { position: absolute; inset: 0; background: rgba(0,0,0,.96); z-index: 300; display: flex; flex-direction: column; }
+.vt { height: 50px; display: flex; align-items: center; gap: 10px; padding: 0 20px; border-bottom: 1px solid var(--bdr); background: var(--surf); flex-shrink: 0; }
+.vt-name { font-size: 12px; font-weight: 700; flex: 1; color: var(--txt); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vt-meta { font-family: var(--mono); font-size: 9px; color: var(--mut); margin-right: 8px; }
+.vt-close { background: none; border: none; cursor: pointer; color: var(--mut); font-size: 18px; padding: 4px; border-radius: 5px; transition: color .12s; }
+.vt-close:hover { color: var(--txt); }
+
+.vbody { flex: 1; display: flex; overflow: hidden; }
+.vdoc { flex: 2; padding: 30px; overflow-y: auto; background: var(--bg); }
+.vdi { max-width: 620px; margin: 0 auto; }
+.doc-title { font-size: 22px; font-weight: 900; letter-spacing: -.03em; margin-bottom: 5px; color: var(--txt); }
+.doc-date { font-family: var(--mono); font-size: 10px; color: var(--mut); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 22px; }
+.doc-abstract { background: var(--card); border-left: 3px solid var(--acc); padding: 13px 16px; border-radius: 0 7px 7px 0; margin-bottom: 24px; }
+.doc-abstract-lbl { font-family: var(--mono); font-size: 9px; font-weight: 700; color: var(--acc); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 7px; }
+.doc-abstract p { font-size: 12px; color: var(--mut); line-height: 1.8; font-style: italic; }
+.doc-section { margin-bottom: 20px; }
+.doc-section h3 { font-size: 12px; font-weight: 800; margin-bottom: 8px; color: var(--txt); border-bottom: 1px solid var(--bdr); padding-bottom: 5px; }
+.doc-section p { font-size: 12px; color: var(--mut); line-height: 1.9; }
+.doc-footer { font-family: var(--mono); font-size: 9px; color: var(--bdr2); text-align: center; padding-top: 20px; border-top: 1px solid var(--bdr); letter-spacing: .15em; text-transform: uppercase; }
+
+.loading-center { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--mut); }
+.loading-center span { font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; animation: blink 1s infinite; }
+@keyframes blink { 0%,100% { opacity:1 } 50% { opacity:.3 } }
+
+.vsidebar { width: 225px; border-left: 1px solid var(--bdr); display: flex; flex-direction: column; background: var(--surf); overflow: hidden; }
+.vsidebar-hd { padding: 13px; border-bottom: 1px solid var(--bdr); font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--mut); }
+.ocr-btn { margin: 11px; padding: 9px; background: var(--card); border: 1px solid var(--bdr); border-radius: 7px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--txt); transition: all .15s; }
+.ocr-btn:hover:not(:disabled) { border-color: var(--acc); color: var(--acc); }
+.ocr-btn:disabled { opacity: .4; cursor: default; }
+.ocr-buf { flex: 1; margin: 0 11px 11px; background: var(--bg); border: 1px solid var(--bdr); border-radius: 7px; padding: 10px; overflow-y: auto; font-family: var(--mono); font-size: 10px; color: var(--mut); line-height: 1.8; }
+.copy-btn { margin: 0 11px 11px; padding: 7px; background: var(--card); border: 1px solid var(--bdr); border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-family: var(--mono); font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--mut); transition: all .15s; }
+.copy-btn:hover { border-color: var(--acc); color: var(--acc); }
+
+/* ── Chat ── */
+.chat-fab { position: absolute; bottom: 20px; right: 20px; z-index: 150; width: 46px; height: 46px; border-radius: 12px; background: var(--acc); border: none; cursor: pointer; font-size: 20px; box-shadow: 0 4px 20px rgba(245,166,35,.35); transition: transform .15s; }
+.chat-fab:hover { transform: scale(1.08); }
+
+.chat-panel { position: absolute; bottom: 78px; right: 20px; z-index: 150; width: 292px; height: 390px; background: var(--surf); border: 1px solid var(--bdr); border-radius: 14px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 18px 55px rgba(0,0,0,.55); animation: popUp .18s ease-out; }
+@keyframes popUp { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
+
+.chat-hd { padding: 12px 14px; border-bottom: 1px solid var(--bdr); display: flex; align-items: center; gap: 7px; }
+.chat-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--grn); }
+.chat-hd span { font-family: var(--mono); font-size: 11px; font-weight: 700; flex: 1; color: var(--txt); }
+.chat-hd button { background: none; border: none; cursor: pointer; color: var(--mut); font-size: 15px; }
+
+.chat-msgs { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.msg { max-width: 86%; }
+.msg.bot { align-self: flex-start; }
+.msg.usr { align-self: flex-end; }
+.bubble { padding: 8px 11px; border-radius: 10px; font-size: 12px; line-height: 1.5; }
+.msg.bot .bubble { background: var(--card); color: var(--txt); border-radius: 3px 10px 10px 10px; }
+.msg.usr .bubble { background: var(--acc); color: #0c0c0e; font-weight: 600; border-radius: 10px 3px 10px 10px; }
+
+.chat-input-row { padding: 8px; border-top: 1px solid var(--bdr); display: flex; gap: 5px; }
+.chat-input { flex: 1; background: var(--card); border: 1px solid var(--bdr); border-radius: 6px; padding: 7px 10px; font-family: var(--sans); font-size: 12px; color: var(--txt); outline: none; transition: border-color .15s; }
+.chat-input:focus { border-color: var(--acc); }
+/* BUG FIX #4: was "transition: *background* .12s" */
+.chat-send { width: 32px; height: 32px; border-radius: 6px; background: var(--acc); border: none; cursor: pointer; font-size: 14px; flex-shrink: 0; transition: background .12s; }
+.chat-send:hover:not(:disabled) { background: var(--acc2); }
+.chat-send:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── Toasts ── */
+.toast-container { position: absolute; top: 14px; right: 14px; z-index: 500; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
+.toast { width: 255px; background: var(--surf); border: 1px solid var(--bdr); border-radius: 9px; padding: 10px 12px; display: flex; align-items: flex-start; gap: 9px; animation: slideIn .2s ease-out; box-shadow: 0 8px 28px rgba(0,0,0,.45); }
+@keyframes slideIn { from { opacity:0; transform:translateX(8px) } to { opacity:1; transform:translateX(0) } }
+.toast-icon { width: 24px; height: 24px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+.toast-icon.ok  { background: rgba(34,197,94,.12); }
+.toast-icon.inf { background: rgba(59,130,246,.12); }
+.toast-icon.err { background: rgba(239,68,68,.12); }
+.toast-title { font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--txt); }
+.toast-msg { font-size: 11px; color: var(--mut); margin-top: 2px; }
+
+/* ── Utility ── */
+.spin { display: inline-block; animation: spinAnim .8s linear infinite; }
+@keyframes spinAnim { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <!-- Sidebar -->
+  <aside class="sb">
+    <div class="logo">
+      <div class="logo-ic">⚙️</div>
+      <span class="logo-tx">DocLogic<span class="logo-v"> v2</span></span>
+    </div>
+    <nav class="sb-nav">
+      <div class="nav-lbl">
+        Library
+        <button class="nav-add" onclick="toggleAddInput()" title="New folder">+</button>
+      </div>
+      <div id="folder-input-wrap" style="display:none">
+        <input class="ainp" id="new-folder-name" placeholder="folder name…"
+          onkeydown="if(event.key==='Enter')addFolder(); if(event.key==='Escape')toggleAddInput();">
+      </div>
+      <div id="folder-list"></div>
+    </nav>
+    <div class="sb-ft">
+      <div style="display:flex;align-items:center;margin-bottom:5px">
+        <span class="sdot"></span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--mut);letter-spacing:.06em;text-transform:uppercase">online mode</span>
+      </div>
+      <div id="log-list"></div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div id="ibar" class="ibar" style="display:none"></div>
+    <header class="tb">
+      <span style="color:var(--mut);font-size:13px">#</span>
+      <span class="tb-title" id="active-label">Unsorted</span>
+      <div class="sg">
+        <button class="sbt on" id="sn" onclick="setSort('name')">name</button>
+        <button class="sbt" id="st" onclick="setSort('type')">type</button>
+      </div>
+      <button class="tbtn" id="conv-btn" onclick="doConvert()" disabled>▶ Convert</button>
+      <label class="tbtn pri" style="cursor:pointer">
+        ↑ Import
+        <input type="file" multiple style="display:none" onchange="handleUpload(event)">
+      </label>
+    </header>
+    <div id="grid-wrap" class="fg"><div class="fgi" id="fgrid"></div></div>
+    <div id="empty-state" class="empty" style="display:none">
+      <span style="font-size:32px;opacity:.08">📁</span>
+      <h3>No files in this node</h3>
+      <p>Import files or move items here</p>
+    </div>
+  </div>
+
+  <!-- Dynamic overlays -->
+  <div id="overlays"></div>
+
+  <!-- Chat fab -->
+  <button class="chat-fab" id="chat-fab" onclick="toggleChat()">💬</button>
+
+  <!-- Chat panel -->
+  <div class="chat-panel" id="chat-panel" style="display:none">
+    <div class="chat-hd">
+      <span class="chat-dot"></span>
+      <span>Document Assistant</span>
+      <button onclick="toggleChat()">✕</button>
+    </div>
+    <div class="chat-msgs" id="chat-msgs">
+      <div class="msg bot"><div class="bubble">Hi! Ask me anything about your files.</div></div>
+    </div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="chat-in" placeholder="Ask about your files…"
+        onkeydown="if(event.key==='Enter'&&!chatBusy)sendChat()">
+      <button class="chat-send" id="chat-send" onclick="sendChat()">➤</button>
+    </div>
+  </div>
+
+  <!-- Toasts -->
+  <div class="toast-container" id="toasts"></div>
+</div>
+
+<script>
+// ── State ──
+// BUG FIX #8: uid() was using deprecated substr — replaced with substring
+const uid = () => Math.random().toString(36).substring(2, 11);
+const tsf = () => new Date().toLocaleTimeString("en-US", { hour12: false });
+
+let folders = ["Physics", "Electrical", "Personal", "Unsorted", "Images"];
+let files = [
+  { id:"f1", name:"Maxwell_Equations_Notes.pdf",     type:"PDF",   size:"142 KB", category:"Physics" },
+  { id:"f2", name:"Circuit_Analysis_Lab_Report.pdf", type:"PDF",   size:"318 KB", category:"Electrical" },
+  { id:"f3", name:"Oscilloscope_Trace_Ch1.png",      type:"IMAGE", size:"84 KB",  category:"Electrical" },
+  { id:"f4", name:"Schrodinger_Eq_Derivation.pdf",   type:"PDF",   size:"210 KB", category:"Physics" },
+  { id:"f5", name:"scan_001.jpg",                    type:"IMAGE", size:"56 KB",  category:"Unsorted" },
+  { id:"f6", name:"Budget_Summary_2024.pdf",         type:"PDF",   size:"97 KB",  category:"Personal" },
+  { id:"f7", name:"RL_Circuit_Simulation.pdf",       type:"PDF",   size:"155 KB", category:"Electrical" },
+  { id:"f8", name:"Quantum_Tunneling_Notes.pdf",     type:"PDF",   size:"188 KB", category:"Physics" },
+];
+let active   = "Unsorted";
+let sortBy   = "name";
+let logs     = [`[${tsf()}] System initialised.`];
+let aiSet    = new Set();
+let chatOpen = false;
+let chatBusy = false;
+let ingesting = false;
+
+// ── XSS guard — BUG FIX #5 ──
+// All user/AI content injected into innerHTML must go through esc()
+function esc(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// ── Helpers ──
+function addLog(m) { logs = [...logs, `[${tsf()}] ${m}`].slice(-5); renderLogs(); }
+
+function toast(title, msg = "", type = "inf") {
+  const el = document.createElement("div");
+  el.className = "toast";
+  const icon = type === "ok" ? "✓" : type === "err" ? "✕" : "ℹ";
+  el.innerHTML = `<div class="toast-icon ${esc(type)}">${icon}</div>
+    <div><p class="toast-title">${esc(title)}</p><p class="toast-msg">${esc(msg)}</p></div>`;
+  document.getElementById("toasts").appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+// ── BUG FIX #1 + #2: callClaude now hits /api/claude (our Vercel proxy).
+//    The proxy adds the API key server-side, avoiding CORS and key exposure. ──
+async function callClaude(userMsg, system = "") {
+  try {
+    const body = {
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      messages: [{ role: "user", content: userMsg }]
+    };
+    if (system) body.system = system;
+
+    const res = await fetch("/api/claude", {          // ← proxy, not direct Anthropic URL
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      // BUG FIX #6: errors are no longer silently swallowed
+      const msg = err.error || `HTTP ${res.status}`;
+      toast("API Error", msg, "err");
+      addLog(`API error: ${msg}`);
+      return "";
+    }
+
+    const d = await res.json();
+    return d.content?.map(b => b.text || "").join("") || "";
+  } catch (e) {
+    // BUG FIX #6: network-level errors now surface to the user
+    toast("Network Error", e.message, "err");
+    addLog(`Network error: ${e.message}`);
+    return "";
+  }
+}
+
+// ── Render ──
+function sortedFolders() {
+  return [...folders].sort((a, b) => {
+    const o = { Personal: 0, Images: 1, Unsorted: 99 };
+    return (o[a] ?? 10) !== (o[b] ?? 10)
+      ? (o[a] ?? 10) - (o[b] ?? 10)
+      : a.localeCompare(b);
+  });
+}
+
+function folderFiles() {
+  return files.filter(f => f.category === active).sort((a, b) =>
+    sortBy === "type" ? a.type.localeCompare(b.type) : a.name.localeCompare(b.name));
+}
+
+function renderLogs() {
+  document.getElementById("log-list").innerHTML =
+    logs.slice(-3).map(l => `<p class="logl">${esc(l)}</p>`).join("");
+}
+
+function renderFolders() {
+  const prot = ["Unsorted", "Personal", "Images"];
+  document.getElementById("folder-list").innerHTML = sortedFolders().map(f => {
+    const cnt = files.filter(x => x.category === f).length;
+    const on  = f === active ? " on" : "";
+    const icon = f === "Images" ? "🖼" : "📁";
+    // BUG FIX #5: folder name escaped before injection into HTML
+    const ef  = esc(f);
+    const acts = !prot.includes(f)
+      ? `<div class="fa"><button onclick="startRename('${ef}',event)" title="Rename">✎</button><button onclick="askDelete('${ef}',event)" title="Delete">🗑</button></div>`
+      : "";
+    return `<div class="fi">
+      <button class="fb${on}" onclick="setActive('${ef}')">
+        ${icon}
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ef}</span>
+        <span class="fct">${cnt}</span>
+      </button>${acts}
+    </div>`;
+  }).join("");
+}
+
+function renderFiles() {
+  const ff = folderFiles();
+  const gw = document.getElementById("grid-wrap");
+  const em = document.getElementById("empty-state");
+  const gr = document.getElementById("fgrid");
+  document.getElementById("active-label").textContent = active;
+  document.getElementById("ibar").style.display = ingesting ? "block" : "none";
+  const hasImg = files.some(f => f.type === "IMAGE" && f.category === active);
+  document.getElementById("conv-btn").disabled = !hasImg;
+
+  if (!ff.length) {
+    gw.style.display = "none"; em.style.display = "flex";
+  } else {
+    gw.style.display = "block"; em.style.display = "none";
+    gr.innerHTML = ff.map(f => {
+      const busy  = aiSet.has(f.id);
+      const isImg = f.type === "IMAGE";
+      // BUG FIX #5: filename escaped before injecting into HTML
+      const ef = esc(f.name);
+      return `<div class="fcard">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between">
+          <div class="fic ${isImg ? "img" : "pdf"}">${isImg ? "🖼" : "📄"}</div>
+          <div class="fax">
+            <button onclick="aiRename('${esc(f.id)}')" title="AI rename">${busy ? '<span class="spin">↻</span>' : "✨"}</button>
+            <button onclick="openViewer('${esc(f.id)}')" title="Preview">👁</button>
+            <button class="del" onclick="delFile('${esc(f.id)}')" title="Delete">🗑</button>
+          </div>
+        </div>
+        <button class="fn" onclick="openViewer('${esc(f.id)}')">${ef}</button>
+        <div class="fm"><span>${esc(f.size)}</span><span>${esc(f.type)}</span></div>
+      </div>`;
+    }).join("");
+  }
+}
+
+function render() { renderFolders(); renderFiles(); renderLogs(); }
+
+// ── Actions ──
+function setActive(f) { active = f; render(); }
+function setSort(s) {
+  sortBy = s;
+  document.getElementById("sn").className = "sbt" + (s === "name" ? " on" : "");
+  document.getElementById("st").className = "sbt" + (s === "type" ? " on" : "");
+  renderFiles();
+}
+
+function toggleAddInput() {
+  const w = document.getElementById("folder-input-wrap");
+  w.style.display = w.style.display === "none" ? "block" : "none";
+  if (w.style.display === "block") document.getElementById("new-folder-name").focus();
+}
+function addFolder() {
+  const n = document.getElementById("new-folder-name").value.trim();
+  if (!n || folders.includes(n)) return;
+  folders.push(n); active = n;
+  document.getElementById("folder-input-wrap").style.display = "none";
+  document.getElementById("new-folder-name").value = "";
+  render();
+}
+
+function delFile(id) { files = files.filter(f => f.id !== id); render(); }
+
+// ── Overlay helpers ──
+function pushOverlay(html) {
+  const ov = document.createElement("div");
+  ov.className = "ov"; ov.innerHTML = html;
+  document.getElementById("overlays").appendChild(ov);
+  return ov;
+}
+function popOverlay() {
+  const ov = document.getElementById("overlays");
+  if (ov.lastChild) ov.removeChild(ov.lastChild);
+}
+
+function askDelete(folder, e) {
+  e.stopPropagation();
+  pushOverlay(`<div class="mo">
+    <div class="mo-icon">⚠️</div>
+    <p class="mo-t">Delete "${esc(folder)}"?</p>
+    <p class="mo-s">Files inside will move to Unsorted. This cannot be undone.</p>
+    <div class="mo-f">
+      <button class="btn" style="flex:1" onclick="popOverlay()">Cancel</button>
+      <button class="btn dng" style="flex:1" onclick="doDeleteFolder('${esc(folder)}')">Delete</button>
+    </div>
+  </div>`);
+}
+function doDeleteFolder(folder) {
+  files   = files.map(f => f.category === folder ? { ...f, category: "Unsorted" } : f);
+  folders = folders.filter(f => f !== folder);
+  if (active === folder) active = "Unsorted";
+  toast("Folder deleted", "Files moved to Unsorted.", "inf");
+  popOverlay(); render();
+}
+
+function startRename(folder, e) {
+  e.stopPropagation();
+  pushOverlay(`<div class="mo">
+    <p class="mo-t">Rename folder</p>
+    <p class="mo-s">New name for "${esc(folder)}"</p>
+    <input class="mo-i" id="ren-in" value="${esc(folder)}" onkeydown="if(event.key==='Enter')doRename('${esc(folder)}')">
+    <div class="mo-f">
+      <button class="btn" onclick="popOverlay()">Cancel</button>
+      <button class="btn pri" onclick="doRename('${esc(folder)}')">Rename</button>
+    </div>
+  </div>`);
+  setTimeout(() => document.getElementById("ren-in")?.focus(), 40);
+}
+function doRename(old) {
+  const n = document.getElementById("ren-in")?.value.trim();
+  if (!n || folders.includes(n)) return;
+  folders = folders.map(f => f === old ? n : f);
+  files   = files.map(f => f.category === old ? { ...f, category: n } : f);
+  if (active === old) active = n;
+  popOverlay(); render();
+}
+
+// ── File upload ──
+// BUG FIX #9: non-PDF/image files now get a proper "DOC" type instead of mislabelled PDF
+async function handleUpload(e) {
+  const up = Array.from(e.target.files); if (!up.length) return;
+  ingesting = true; renderFiles();
+  for (const f of up) {
+    const fileType = f.type.includes("image") ? "IMAGE"
+                   : f.type === "application/pdf" ? "PDF"
+                   : "DOC";
+    const base = {
+      id: uid(),
+      name: f.name,
+      type: fileType,
+      size: (f.size / 1024).toFixed(1) + " KB",
+      category: "Unsorted"
+    };
+    const processed = await processFile(base);
+    files.push(processed);
+    addLog(`Ingested: ${processed.name} → ${processed.category}`);
+    await new Promise(r => setTimeout(r, 260));
+    render();
+  }
+  ingesting = false; renderFiles();
+  toast("Import complete", `${up.length} file(s) added.`, "ok");
+  e.target.value = "";
+}
+
+async function processFile(raw) {
+  if (raw.type === "IMAGE") return { ...raw, category: "Images" };
+  const low = raw.name.toLowerCase();
+  const m   = folders.find(f => f !== "Unsorted" && f !== "Images" && low.includes(f.toLowerCase()));
+  if (m) return { ...raw, category: m };
+  const ai = (await callClaude(
+    `Best folder from: ${folders.filter(f => f !== "Images").join(",")} for "${raw.name}". Reply with ONLY the folder name.`
+  )).trim();
+  if (folders.includes(ai)) return { ...raw, category: ai };
+  return new Promise(res => showManualSort(raw, res));
+}
+
+function showManualSort(file, cb) {
+  const chips = folders.filter(f => f !== "Images")
+    .map(f => `<button class="chip" onclick="resolveManual('${esc(f)}')">${esc(f)}</button>`)
+    .join("");
+  pushOverlay(`<div class="mo">
+    <p class="mo-t">Assign folder</p>
+    <p class="mo-s">AI couldn't categorise <strong style="color:var(--txt)">${esc(file.name)}</strong>. Pick a folder:</p>
+    <div class="chips">${chips}</div>
+  </div>`);
+  window._manualCb = cat => { cb({ ...file, category: cat }); };
+}
+function resolveManual(cat) {
+  if (window._manualCb) { window._manualCb(cat); window._manualCb = null; }
+  popOverlay();
+}
+
+// ── AI rename ──
+async function aiRename(id) {
+  if (aiSet.has(id)) return;
+  aiSet.add(id); renderFiles();
+  const file = files.find(f => f.id === id); if (!file) return;
+  const n = (await callClaude(
+    `Suggest a professional filename for "${file.name}" in category "${file.category}". Reply with ONLY the filename, no quotes or extra text.`
+  )).trim().replace(/["'`\s]/g, "");
+  if (n && n !== file.name) {
+    files = files.map(f => f.id === id ? { ...f, name: n } : f);
+    toast("Renamed", n);
+  }
+  aiSet.delete(id); renderFiles();
+}
+
+// ── Convert images ──
+function doConvert() {
+  const imgs = files.filter(f => f.type === "IMAGE" && f.category === active);
+  if (!imgs.length) return;
+  // BUG FIX #3: regex was /**\\.**(png|jpe?g|tiff?)$/i — markdown ** bold markers corrupted it
+  files = files.map(f => imgs.find(i => i.id === f.id)
+    ? { ...f, type: "PDF", name: f.name.replace(/\.(png|jpe?g|tiff?)$/i, ".pdf") }
+    : f);
+  render();
+  toast("Conversion done", `${imgs.length} image(s) → PDF.`, "ok");
+}
+
+// ── Viewer ──
+// BUG FIX #7: deduplicate — don't open a second viewer for the same file
+function openViewer(id) {
+  if (document.getElementById("viewer-" + id)) return; // already open
+  const file = files.find(f => f.id === id); if (!file) return;
+  const isImg = file.type === "IMAGE";
+
+  const ov = document.createElement("div");
+  ov.style.cssText = "position:absolute;inset:0;z-index:300";
+  ov.innerHTML = `
+    <div class="viewer" id="viewer-${esc(id)}">
+      <div class="vt">
+        <span style="font-size:18px">${isImg ? "🖼" : "📄"}</span>
+        <span class="vt-name">${esc(file.name)}</span>
+        <span class="vt-meta">${esc(file.size)} · ${esc(file.category)}</span>
+        <button class="vt-close" onclick="this.closest('[style]').remove()">✕</button>
+      </div>
+      <div class="vbody">
+        <div class="vdoc" id="vdoc-${esc(id)}">
+          <div class="loading-center">
+            <span class="spin" style="font-size:24px;color:var(--acc)">↻</span>
+            <span>rendering preview…</span>
+          </div>
+        </div>
+        <div class="vsidebar">
+          <div class="vsidebar-hd">⊞ OCR Engine</div>
+          <button class="ocr-btn" id="ocr-btn-${esc(id)}" onclick="runOCR('${esc(id)}')">⬛ Run extraction</button>
+          <div class="ocr-buf" id="ocr-buf-${esc(id)}">Awaiting command…</div>
+          <button class="copy-btn" id="copy-btn-${esc(id)}" style="display:none" onclick="copyBuf('${esc(id)}')">⎘ Copy buffer</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById("overlays").appendChild(ov);
+  loadPreview(file);
+}
+
+async function loadPreview(file) {
+  const el = document.getElementById("vdoc-" + file.id); if (!el) return;
+  try {
+    const raw = await callClaude(
+      `Create a realistic mock document for a file named "${file.name}" in category "${file.category}". Return JSON with: title, date, abstract, sections (array of {heading, content} with 2-3 items), footer. Return ONLY raw JSON, no markdown fences.`,
+      "You are a document simulator. Return only valid JSON."
+    );
+    if (!raw) throw new Error("Empty response");
+    const preview = JSON.parse(raw.replace(/```json|```/g, "").trim());
+    el.innerHTML = `<div class="vdi">
+      <p class="doc-title">${esc(preview.title || file.name)}</p>
+      <p class="doc-date">Dated: ${esc(preview.date || new Date().toLocaleDateString())}</p>
+      <div class="doc-abstract">
+        <p class="doc-abstract-lbl">Abstract</p>
+        <p>${esc(preview.abstract || "")}</p>
+      </div>
+      ${(preview.sections || []).map(s =>
+        `<div class="doc-section"><h3>${esc(s.heading)}</h3><p>${esc(s.content)}</p></div>`
+      ).join("")}
+      <p class="doc-footer">${esc(preview.footer || "— end of document simulation —")}</p>
+    </div>`;
+  } catch {
+    el.innerHTML = `<div class="vdi">
+      <p class="doc-title">${esc(file.name)}</p>
+      <p class="doc-date">${esc(file.category)} · ${esc(file.size)}</p>
+      <div class="doc-abstract">
+        <p class="doc-abstract-lbl">Note</p>
+        <p>AI preview unavailable. Check your API connection.</p>
+      </div>
+      <div class="doc-section"><h3>File Details</h3><p>Type: ${esc(file.type)} — Size: ${esc(file.size)} — Category: ${esc(file.category)}</p></div>
+      <p class="doc-footer">— end of document simulation —</p>
+    </div>`;
+  }
+}
+
+async function runOCR(id) {
+  const file = files.find(f => f.id === id); if (!file) return;
+  const btn = document.getElementById("ocr-btn-" + id);
+  const buf = document.getElementById("ocr-buf-" + id);
+  if (btn) btn.disabled = true;
+  if (buf) buf.textContent = "Extracting…";
+  const result = await callClaude(
+    `Simulate realistic OCR text extraction from a file named "${file.name}" in category "${file.category}". Output ~120 words of authentic technical text as plain paragraphs.`
+  );
+  // BUG FIX #5: use textContent not innerHTML for AI output
+  if (buf) buf.textContent = result || "No content extracted.";
+  const cp = document.getElementById("copy-btn-" + id);
+  if (cp) cp.style.display = "flex";
+  if (btn) btn.disabled = false;
+}
+
+function copyBuf(id) {
+  const buf = document.getElementById("ocr-buf-" + id);
+  if (buf) navigator.clipboard.writeText(buf.textContent)
+    .then(() => toast("Copied", "Buffer copied to clipboard.", "ok"));
+}
+
+// ── Chat ──
+function toggleChat() {
+  chatOpen = !chatOpen;
+  document.getElementById("chat-panel").style.display = chatOpen ? "flex" : "none";
+  document.getElementById("chat-fab").textContent = chatOpen ? "✕" : "💬";
+}
+
+async function sendChat() {
+  if (chatBusy) return;
+  const inp = document.getElementById("chat-in");
+  const m = inp.value.trim(); if (!m) return;
+  inp.value = "";
+  appendMsg("usr", esc(m));
+  chatBusy = true;
+  document.getElementById("chat-send").disabled = true;
+  const tid = "think-" + uid();
+  appendMsg("bot", '<span class="spin">↻</span> Thinking…', tid);
+  const sys = `You are a Document Assistant. The user has ${files.length} files in folders: ${folders.join(", ")}. Active folder: ${active}. Be helpful and concise.`;
+  const reply = await callClaude(m, sys);
+  document.getElementById(tid)?.remove();
+  // BUG FIX #5: escape AI reply before inserting as HTML
+  appendMsg("bot", reply ? esc(reply) : "Sorry, I couldn't get a response right now.");
+  chatBusy = false;
+  document.getElementById("chat-send").disabled = false;
+}
+
+function appendMsg(role, text, id = "") {
+  const msgs = document.getElementById("chat-msgs");
+  const d    = document.createElement("div");
+  d.className = "msg " + role;
+  if (id) d.id = id;
+  d.innerHTML = `<div class="bubble">${text}</div>`;
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ── Boot ──
+render();
+</script>
+</body>
+</html>
